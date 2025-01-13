@@ -5,8 +5,8 @@ local resty = require("lucas.resty")
 ngx.say("<p>hello, world</p>")
 ngx.log(ngx.INFO, "hello, world")
 
-local result = resty.async_test()
+resty.async_test()
 
-ngx.log(ngx.INFO, "result: ", result)
+-- ngx.log(ngx.INFO, "result: ", result)
 
 ngx.say("<p>foo</p>")
