@@ -5,16 +5,15 @@
 /// @copyright Copyright (c) 2023 LotusFlare, Inc.
 ///
 
+#include "async.c"
 #include "batch.c"
 #include "compatible.c"
 #include "connect.c"
-#include "errors.c"
 #include "logs.c"
 #include "luajit-2.1/lauxlib.h"
 #include "luajit-2.1/lua.h"
 #include "metrics.c"
 #include "query.c"
-#include "state.c"
 #include "types.c"
 
 int version(lua_State *L)
@@ -27,7 +26,7 @@ int luaopen_lucas(lua_State *L)
 {
     luaL_Reg lucas[] = {
         {"version", version},
-        {"connect", connect},
+        {"connect", lucas_connect},
         {"query", query},
         {"batch", batch},
         {"logger", logger},
@@ -70,8 +69,20 @@ int luaopen_lucas(lua_State *L)
 
         {NULL, NULL},
     };
+    luaL_Reg lucas_resty[] = {
+        {"async_test", async_test},
+
+        {NULL, NULL},
+    };
     luaL_openlib(L, "lucas", lucas, 0);
     luaL_openlib(L, "lucas.compatible", lucas_compatible, 0);
+    luaL_openlib(L, "lucas.resty", lucas_resty, 0);
+    // luaL_setfuncs(L, lucas, 0);
+    // luaL_newlib(L, lucas);
+    // luaL_newlib(L, lucas_compatible);
+    // lua_setfield(L, -2, "compatible");
+    // luaL_newlib(L, lucas_resty);
+    // lua_setfield(L, -2, "resty");
     cass_log_set_level(CASS_LOG_DISABLED);
     return 2;
 }

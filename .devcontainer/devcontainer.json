@@ -20,15 +20,10 @@
         }
     },
     "features": {
-        "ghcr.io/devcontainers/features/git:1": {
-            "version": "latest"
-        },
-        "ghcr.io/devcontainers/features/common-utils:1": {
-            "version": "latest"
-        },
-        "ghcr.io/devcontainers/features/docker-from-docker:1": {
-            "version": "latest",
-            "dockerDashComposeVersion": "v2"
-        }
+        // "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+        //     "dockerDashComposeVersion": "v2"
+        // },
+        "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/devcontainers/features/common-utils:2.5.2": {}
     }
 }

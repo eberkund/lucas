@@ -10,7 +10,6 @@
 #include "logs.c"
 #include "query.c"
 #include "state.c"
-#include "types.c"
 #include <luajit-2.1/lauxlib.h>
 #include <luajit-2.1/lua.h>
 #include <stdbool.h>

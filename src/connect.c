@@ -238,7 +238,7 @@ bool get_reconnect(lua_State *L, int i)
     return reconnect;
 }
 
-static int connect(lua_State *L)
+static int lucas_connect(lua_State *L)
 {
     lucas_log(LOG_INFO, "attempting to connect");
     const int ARG_OPTIONS = 1;

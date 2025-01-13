@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "errors.c"
 #include "luajit-2.1/lua.h"
 #include <cassandra.h>
 
