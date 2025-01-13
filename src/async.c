@@ -2,6 +2,7 @@
 #include "ngx_cycle.h"
 #include "ngx_http.h"
 #include "ngx_http_lua_api.h"
+#include "ngx_string.h"
 #include "ngx_thread_pool.h"
 #include <luajit-2.1/lauxlib.h>
 #include <luajit-2.1/lua.h>
@@ -46,94 +47,128 @@ typedef struct
     ngx_http_request_t *request; // Associated HTTP request
     u_char *result;                // Result of the async operation
     int error;                   // Error flag (0 = success, 1 = error)
+    int callback_ref;            // Lua registry reference for the callback function
 } ngx_http_lua_ctx_t;
 
-static ngx_int_t ngx_http_lua_resume(lua_State *L, ngx_http_request_t *r)
+static void ngx_http_lua_resume(lua_State *co, ngx_http_request_t *r)
 {
-    printf("calling ngx_http_lua_resume\n");
-    int rc = lua_resume(L, 0);
+    printf("resuming\n");
+    int status;
+    int nresults;
 
-    if (rc == LUA_YIELD)
-    {
-        // The coroutine yielded again, wait for the next event
-        return NGX_DONE;
-    }
-    else if (rc != LUA_OK)
-    {
-        // An error occurred, log the error message
-        const char *err_msg = lua_tostring(L, -1);
-        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "lua error: %s", err_msg);
-        return NGX_ERROR;
-    }
+    // Resume the coroutine with arguments already on the stack
+    status = lua_resume(co, lua_gettop(co) - 1);
+    printf("status %d", status);
+    printf("top = %s", lua_typename(co, -1));
+    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "top = %s", lua_typename(co, lua_gettop(co)));
 
-    // Retrieve the result from the coroutine
-    if (lua_gettop(L) > 0)
-    {
-        const char *response = lua_tostring(L, -1);
-        ngx_str_t resp;
-        resp.data = (u_char *)response;
-        resp.len = strlen(response);
+    return;
 
-        // Send the response back to the client
-        ngx_buf_t *b = ngx_create_temp_buf(r->pool, resp.len);
-        if (b == NULL)
-        {
-            return NGX_HTTP_INTERNAL_SERVER_ERROR;
-        }
+    // if (status == LUA_OK)
+    // { // LUA_OK in Lua 5.1
+    //     // Coroutine finished successfully
+    //     if (lua_gettop(co) >= 1 && lua_isstring(co, -1))
+    //     {
+    //         // Get the result string from the Lua stack
+    //         const char *result = lua_tostring(co, -1);
+    //         lua_pop(co, 1); // Remove the result from the stack
 
-        ngx_memcpy(b->pos, resp.data, resp.len);
-        b->last = b->pos + resp.len;
-        b->last_buf = 1;
+    //         ngx_buf_t *b;
+    //         ngx_chain_t out;
 
-        ngx_chain_t out;
-        out.buf = b;
-        out.next = NULL;
+    //         // Allocate a buffer for the response
+    //         b = ngx_create_temp_buf(r->pool, ngx_strlen(result));
+    //         if (b == NULL)
+    //         {
+    //             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "Failed to allocate buffer for Lua result");
+    //             ngx_http_finalize_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
+    //             return;
+    //         }
 
-        r->headers_out.status = NGX_HTTP_OK;
-        r->headers_out.content_length_n = resp.len;
+    //         // Copy the result into the buffer
+    //         ngx_memcpy(b->pos, result, ngx_strlen(result));
+    //         b->last = b->pos + ngx_strlen(result);
+    //         b->last_buf = 1;
 
-        ngx_http_send_header(r);
-        ngx_http_output_filter(r, &out);
-    }
+    //         out.buf = b;
+    //         out.next = NULL;
 
-    return NGX_OK;
+    //         // Send the response to the client
+    //         r->headers_out.status = NGX_HTTP_OK;
+    //         r->headers_out.content_length_n = ngx_strlen(result);
+    //         ngx_http_send_header(r);
+    //         ngx_http_output_filter(r, &out);
+    //         ngx_http_finalize_request(r, NGX_DONE);
+    //     }
+    //     else
+    //     {
+    //         // No result on the Lua stack
+    //         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "Lua coroutine completed without a valid result");
+    //         ngx_http_finalize_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
+    //     }
+    // }
+    // else if (status == LUA_YIELD)
+    // {
+    //     // Coroutine yielded; do nothing (will be resumed later)
+    //     return;
+    // }
+    // else
+    // {
+    //     // Coroutine errored
+    //     const char *err = lua_tostring(co, -1);
+    //     if (err)
+    //     {
+    //         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "Lua coroutine error: %s", err);
+    //     }
+    //     else
+    //     {
+    //         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "Lua coroutine error (unknown)");
+    //     }
+    //     lua_pop(co, 1); // Remove the error message from the stack
+
+    //     ngx_http_finalize_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
+    // }
 }
 
 static void my_completion_handler(ngx_event_t *ev)
 {
     printf("completion handler\n");
-
-    ngx_thread_task_t *task = (ngx_thread_task_t *)ev->data;
-    ngx_http_lua_ctx_t *ctx = (ngx_http_lua_ctx_t *)task->ctx;
+    printf("preparing 1/3\n");
+    ngx_thread_task_t *task = ev->data;
+    printf("preparing 2/3\n");
+    ngx_http_lua_ctx_t *ctx = task->ctx;
+    printf("preparing 3/3, %p\n", ctx);
     lua_State *co = ctx->co;
 
     // Push result or error onto Lua stack
     if (ctx->error)
     {
+        printf("error\n");
         lua_pushnil(co);
         lua_pushstring(co, "operation failed");
     }
     else
     {
+        printf("no error\n");
         lua_pushstring(co, "no error");
         lua_pushnil(co); // No error
     }
 
     // Resume the Lua coroutine
-    // ngx_http_lua_co_ctx_resume_helper(co, 0);
     ngx_http_lua_resume(co, ctx->request);
 }
 
 static void my_work_handler(void *data, ngx_log_t *log)
 {
-    // ngx_http_lua_ctx_t *ctx = data;
+    ngx_http_lua_ctx_t *ctx = data;
     printf("calling work handler\n");
     // Simulate a blocking operation (e.g., database query)
     ngx_msleep(1000); // Replace with actual blocking code
 
-    // // Set the result of the operation
-    // ctx->result = ngx_pstrdup(ctx->request->pool, "query result");
-    // ctx->error = 0; // No error
+    // Set the result of the operation
+    ngx_str_t result = ngx_string("result");
+    ctx->result = ngx_pstrdup(ctx->request->pool, &result);
+    ctx->error = 0; // No error
 }
 
 static int async_test(lua_State *L)
@@ -154,6 +189,7 @@ static int async_test(lua_State *L)
 
     // Create a new Lua coroutine
     lua_State *co = lua_newthread(L);
+    printf("new thread created %p\n", co);
     ctx->co = co;
     ctx->request = r;
 
@@ -174,12 +210,12 @@ static int async_test(lua_State *L)
         return luaL_error(L, "failed to allocate task");
     }
 
-    task->handler = my_work_handler;             // Task handler
+// Initialize the task
+    task->handler = my_work_handler;            // Task handler
     task->event.handler = my_completion_handler; // Completion handler
-    task->event.data = ctx;
-    task->ctx = ctx;
-
-    // ngx_thread_pool_t *thread_pool = ngx_thread_pool_get((ngx_str_t *)&ngx_thread_pool_name, r->connection->log);
+    task->ctx = ctx;                            // Store the context in the task
+    task->event.data = task;
+    task->event.log = r->connection->log;       // Log for error messages
 
     // Get the NGINX thread pool
     ngx_str_t pool_name = ngx_string("default"); // Use "default" thread pool
@@ -188,8 +224,6 @@ static int async_test(lua_State *L)
     {
         return luaL_error(L, "failed to get thread pool");
     }
-
-    // ngx_thread_pool_add(ngx_conf_t * cf, ngx_str_t * name)
 
     if (ngx_thread_task_post(thread_pool, task) != NGX_OK)
     {

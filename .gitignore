@@ -8,3 +8,4 @@ CMakeFiles
 scratch.lua
 docker-compose.override.yml
 tmp
+core
