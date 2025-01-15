@@ -15,7 +15,8 @@
                 "redhat.vscode-yaml",
                 "llvm-vs-code-extensions.vscode-clangd",
                 "twxs.cmake",
-                "JohnnyMorganz.stylua"
+                "JohnnyMorganz.stylua",
+                "ms-azuretools.vscode-docker"
             ]
         }
     },

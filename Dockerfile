@@ -1,17 +1,16 @@
 # syntax=docker/dockerfile:1
 
-FROM ubuntu:24.04 AS base
+FROM openresty/openresty:noble AS base
 
 ENV C_INCLUDE_PATH="/usr/include/luajit-2.1/"
 ENV LD_LIBRARY_PATH="/usr/local/lib/x86_64-linux-gnu"
 ENV LUA_CPATH="/app/build/?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/lib/x86_64-linux-gnu/?.so"
 ENV LUA_PATH="/app/integration/tests/?.lua;;"
-ARG DEBIAN_FRONTEND="noninteractive"
-SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+ENV PATH="$PATH:/opt/openresty-devel-utils"
 
 RUN <<EOF
-apt-get -qq -o=Dpkg::Use-Pty=0 update
-apt-get -qq -o=Dpkg::Use-Pty=0 install \
+DEBIAN_FRONTEND="noninteractive" apt-get update
+DEBIAN_FRONTEND="noninteractive" apt-get install -y \
   git \
   libpcre3-dev \
   boxes \
@@ -37,6 +36,16 @@ luarocks install luasocket
 luarocks install uuid
 luarocks install lua-cassandra
 EOF
+
+# RUN apt-get -y install --no-install-recommends wget gnupg ca-certificates lsb-release \
+#     wget -O - https://openresty.org/package/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/openresty.gpg \
+#     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/openresty.gpg] http://openresty.org/package/ubuntu $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/openresty.list > /dev/null \
+#     apt-get update \
+#     apt-get -y install openresty-dev
+
+# wget -qO- https://github.com/openresty/openresty-devel-utils/archive/refs/heads/master.zip | busybox unzip -
+# mv /opt/openresty-devel-utils-master /opt/openresty-devel-utils
+# chmod +x /opt/openresty-devel-utils/ngx-*
 
 COPY --from=mvdan/shfmt:v3-alpine /bin/shfmt /usr/bin/shfmt
 COPY --from=johnnymorganz/stylua:2.0.2 /stylua /usr/bin/stylua

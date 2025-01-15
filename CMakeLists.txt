@@ -39,6 +39,7 @@ add_library("${PROJECT_NAME}" SHARED src/lucas.c)
 target_include_directories("${PROJECT_NAME}" PRIVATE include)
 
 include_directories(vendor/lua-nginx-module/src/api)
+include_directories(vendor/lua-nginx-module/src)
 include_directories(vendor/nginx/objs)
 include_directories(vendor/nginx/src/core)
 include_directories(vendor/nginx/src/event)
