@@ -15,4 +15,4 @@ local rows = peer:execute("SELECT * FROM testing.data")
 
 ngx.say("<p>hello, world</p>")
 
-pretty.dump(rows)
+-- pretty.dump(rows)

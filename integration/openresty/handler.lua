@@ -14,5 +14,5 @@ lucas.connect({
 })
 
 local results = lucas.query("SELECT * FROM testing.data", {})
-pretty.dump(results)
+-- pretty.dump(results)
 
