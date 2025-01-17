@@ -8,13 +8,11 @@
 #include "batch.c"
 #include "compatible.c"
 #include "connect.c"
-#include "errors.c"
 #include "logs.c"
 #include "luajit-2.1/lauxlib.h"
 #include "luajit-2.1/lua.h"
 #include "metrics.c"
 #include "query.c"
-#include "state.c"
 #include "types.c"
 
 int version(lua_State *L)
