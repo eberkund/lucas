@@ -1,6 +1,4 @@
 local lucas = require("lucas")
--- local resty = require("lucas").resty
--- local compat = require("lucas").compatibility
 local pretty = require("pl.pretty")
 
 ngx.say("<p>hello, world</p>")
@@ -15,13 +13,6 @@ lucas.connect({
     -- },
 })
 
--- resty.async_test(function(result, err)
---     ngx.log(ngx.INFO, "callback")
-
---     if err then
---         ngx.say("Error: ", err)
---     else
---         ngx.say("Result: ", result)
---     end
--- end)
+local results = lucas.query("SELECT * FROM testing.data", {})
+pretty.dump(results)
 

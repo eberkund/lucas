@@ -3,6 +3,20 @@
 services:
   scylla:
     image: scylladb/scylla:6.2
+    ports:
+      - "9999:9042"
+    healthcheck:
+      test: ["CMD-SHELL", "[ $$(nodetool statusgossip) = running ]"]
+      timeout: 3m
+
+  keyspace:
+    image: scylladb/scylla-cqlsh
+    entrypoint: [ "cqlsh", "scylla", "-e" ]
+    command:
+      - "CREATE KEYSPACE IF NOT EXISTS testing WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1};"
+    depends_on:
+      scylla:
+        condition: service_healthy
 
   cassandra:
     image: cassandra:4.1
