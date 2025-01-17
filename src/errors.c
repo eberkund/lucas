@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct LucasError_s
+typedef struct LucasError
 {
     char *message;
 } LucasError;

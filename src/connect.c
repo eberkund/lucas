@@ -10,7 +10,6 @@
 #include "logs.c"
 #include "luajit-2.1/lua.h"
 #include "state.c"
-#include <cassert>
 #include <string.h>
 
 typedef LucasError *(*ConfigCallback)(lua_State *, int, CassCluster *);
@@ -250,6 +249,19 @@ LucasError *set_consistency(lua_State *L, int i, CassCluster *cluster)
     return NULL;
 }
 
+LucasError *set_log_level(lua_State *L, int i, CassCluster *cluster)
+{
+    lua_getfield(L, i, "log_level");
+    const int log_level_index = lua_gettop(L);
+    if (lua_isnil(L, log_level_index))
+    {
+        return NULL;
+    }
+    const CassLogLevel log_level = lua_tointeger(L, log_level_index);
+    cass_log_set_level(log_level);
+    return NULL;
+}
+
 bool get_reconnect(lua_State *L, int i)
 {
     bool reconnect = false;
@@ -263,12 +275,11 @@ bool get_reconnect(lua_State *L, int i)
 
 static int connect(lua_State *L)
 {
-    lucas_log(LOG_INFO, "attempting to connect");
     const int ARG_OPTIONS = 1;
     CassFuture *future = NULL;
-    LucasError *rc = NULL;
     CassCluster *cluster = NULL;
     CassError err = CASS_OK;
+    LucasError *rc = NULL;
     const bool reconnect = get_reconnect(L, ARG_OPTIONS);
     ConfigCallback functions[] = {
         set_contact_points,
@@ -278,6 +289,7 @@ static int connect(lua_State *L)
         set_num_threads_io,
         set_ssl,
         set_authenticator,
+        set_log_level,
         set_use_latency_aware_routing,
         set_connection_heartbeat_interval,
         set_constant_reconnect,
@@ -298,6 +310,7 @@ static int connect(lua_State *L)
     session = cass_session_new();
     cluster = cass_cluster_new();
 
+    lucas_log(LOG_INFO, "configuring cluster with provided options");
     for (int i = 0; i < sizeof(functions) / sizeof(ConfigCallback); i++)
     {
         rc = functions[i](L, ARG_OPTIONS, cluster);
@@ -306,8 +319,8 @@ static int connect(lua_State *L)
             goto cleanup;
         }
     }
-    lucas_log(LOG_INFO, "session configuration done, ready to connect");
 
+    lucas_log(LOG_INFO, "configuration done, attempting to connect");
     future = cass_session_connect(session, cluster);
     cass_future_wait(future);
     err = cass_future_error_code(future);
