@@ -12,8 +12,6 @@
 #include "state.c"
 #include <string.h>
 
-typedef LucasError *(*ConfigCallback)(lua_State *, int, CassCluster *);
-
 LucasError *set_port(lua_State *L, int i, CassCluster *cluster)
 {
     int port = 9042;
@@ -273,38 +271,41 @@ bool get_reconnect(lua_State *L, int i)
     return reconnect;
 }
 
+typedef LucasError *(*ConfigCallback)(lua_State *, int, CassCluster *);
+
+ConfigCallback functions[] = {
+    set_contact_points,
+    set_protocol_version,
+    set_consistency,
+    set_port,
+    set_num_threads_io,
+    set_ssl,
+    set_authenticator,
+    set_log_level,
+    set_use_latency_aware_routing,
+    set_connection_heartbeat_interval,
+    set_constant_reconnect,
+    set_connect_timeout,
+    set_application_name,
+};
+
 static int connect(lua_State *L)
 {
     const int ARG_OPTIONS = 1;
+    CassError err = CASS_OK;
     CassFuture *future = NULL;
     CassCluster *cluster = NULL;
-    CassError err = CASS_OK;
     LucasError *rc = NULL;
     const bool reconnect = get_reconnect(L, ARG_OPTIONS);
-    ConfigCallback functions[] = {
-        set_contact_points,
-        set_protocol_version,
-        set_consistency,
-        set_port,
-        set_num_threads_io,
-        set_ssl,
-        set_authenticator,
-        set_log_level,
-        set_use_latency_aware_routing,
-        set_connection_heartbeat_interval,
-        set_constant_reconnect,
-        set_connect_timeout,
-        set_application_name,
-    };
 
     if (session && !reconnect)
     {
-        lucas_log(LOG_WARN, "already connected, doing nothing");
+        lucas_log(LOG_WARN, "already connected");
         return 0;
     }
     if (session)
     {
-        lucas_log(LOG_WARN, "freeing existing session");
+        lucas_log(LOG_WARN, "closing existing session");
         cass_session_free(session);
     }
     session = cass_session_new();

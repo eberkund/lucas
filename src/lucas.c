@@ -63,13 +63,21 @@ int luaopen_lucas(lua_State *L)
 
         {NULL, NULL},
     };
+
     luaL_Reg lucas_compatible[] = {
         {"convert", convert},
 
         {NULL, NULL},
     };
-    luaL_openlib(L, "lucas", lucas, 0);
-    luaL_openlib(L, "lucas.compatible", lucas_compatible, 0);
+
+    lua_newtable(L);
+    const int table = lua_gettop(L);
+    luaL_setfuncs(L, lucas, 0);
+
+    lua_pushstring(L, "compatible");
+    luaL_newlib(L, lucas_compatible);
+    lua_settable(L, table);
+
     cass_log_set_level(CASS_LOG_DISABLED);
-    return 2;
+    return 1;
 }
