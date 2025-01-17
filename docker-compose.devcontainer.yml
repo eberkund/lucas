@@ -2,6 +2,7 @@
 
 services:
   driver:
+    platform: linux/amd64
     build:
       target: base
     volumes:
