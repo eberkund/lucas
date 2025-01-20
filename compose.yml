@@ -10,7 +10,7 @@ services:
       - "./cert:/opt/scylla/cert"
     healthcheck:
       test: ["CMD-SHELL", "[ $$(nodetool statusgossip) = running ]"]
-      timeout: 3m
+      timeout: 5m
 
   keyspace:
     image: scylladb/scylla-cqlsh
