@@ -20,6 +20,6 @@ CREATE TABLE IF NOT EXISTS testing.collections(
     id bigint,
     uuid_to_text_map map<uuid, text>,
     int_set set<int>,
-    tinyint_list list<int>,
+    tinyint_list list<tinyint>,
     PRIMARY KEY (id)
 );

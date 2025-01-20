@@ -6,9 +6,9 @@ services:
     ports:
       - "9042:9042"
     volumes:
-      - "./integration/syclla/syclla.yml:/etc/syclla/syclla.yml"
-      - "./integration/syclla/node-keystore.jks:/opt/syclla/keystore.jks"
-      - "./integration/syclla/node-truststore.jks:/opt/syclla/truststore.jks"
+      - "./integration/scylla/scylla.yml:/etc/scylla/scylla.yml"
+      - "./integration/scylla/node-keystore.jks:/opt/scylla/keystore.jks"
+      - "./integration/scylla/node-truststore.jks:/opt/scylla/truststore.jks"
     healthcheck:
       test: ["CMD-SHELL", "[ $$(nodetool statusgossip) = running ]"]
       timeout: 3m
@@ -46,7 +46,7 @@ services:
         soft: -1
         hard: -1
     environment:
-      CASSANDRA_HOST: cassandra
+      CASSANDRA_HOST: scylla
       CASSANDRA_PORT: 9042
       CASSANDRA_PORT_SSL: 9142
       CASSANDRA_USER: cassandra
