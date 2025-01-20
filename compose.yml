@@ -6,9 +6,8 @@ services:
     ports:
       - "9042:9042"
     volumes:
-      - "./integration/scylla/scylla.yml:/etc/scylla/scylla.yml"
-      - "./integration/scylla/node-keystore.jks:/opt/scylla/keystore.jks"
-      - "./integration/scylla/node-truststore.jks:/opt/scylla/truststore.jks"
+      - "./integration/scylla/scylla.yaml:/etc/scylla/scylla.yaml"
+      - "./cert:/opt/scylla/cert"
     healthcheck:
       test: ["CMD-SHELL", "[ $$(nodetool statusgossip) = running ]"]
       timeout: 3m
@@ -40,6 +39,7 @@ services:
     build:
       context: .
       target: build
+    platform: linux/amd64
     init: true
     ulimits:
       core:
