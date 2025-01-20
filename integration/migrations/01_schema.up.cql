@@ -3,7 +3,7 @@ CREATE KEYSPACE IF NOT EXISTS testing WITH replication = {
     'replication_factor': 1
 };
 
-CREATE TABLE IF NOT EXISTS testing.data(
+CREATE TABLE IF NOT EXISTS testing.data (
     operator_name text,
     id text,
     id_type int,
@@ -20,6 +20,6 @@ CREATE TABLE IF NOT EXISTS testing.collections(
     id bigint,
     uuid_to_text_map map<uuid, text>,
     int_set set<int>,
-    tinyint_list list<tinyint>,
+    tinyint_list list<int>,
     PRIMARY KEY (id)
 );

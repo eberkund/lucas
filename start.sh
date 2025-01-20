@@ -28,13 +28,7 @@ test() {
 }
 
 cassandra() {
-    print "Waiting for Cassandra"
-    docker compose up cassandra --wait --quiet-pull
-    print "Seeding Cassandra"
-    for file in $(find integration -name '*.cql' | sort); do
-        cat $file | docker compose exec -T cassandra cqlsh -u cassandra -p cassandra
-        echo $file
-    done
+    docker compose up --wait --quiet-pull
 }
 
 run_flags() {

@@ -4,7 +4,11 @@ services:
   scylla:
     image: scylladb/scylla:6.2
     ports:
-      - "9999:9042"
+      - "9042:9042"
+    volumes:
+      - "./integration/syclla/syclla.yml:/etc/syclla/syclla.yml"
+      - "./integration/syclla/node-keystore.jks:/opt/syclla/keystore.jks"
+      - "./integration/syclla/node-truststore.jks:/opt/syclla/truststore.jks"
     healthcheck:
       test: ["CMD-SHELL", "[ $$(nodetool statusgossip) = running ]"]
       timeout: 3m
@@ -18,20 +22,19 @@ services:
       scylla:
         condition: service_healthy
 
-  cassandra:
-    image: cassandra:4.1
-    environment:
-      CASSANDRA_LISTEN_ADDRESS: cassandra
-    mem_limit: 4g
-    volumes:
-      - "./integration/cassandra/cassandra.yaml:/etc/cassandra/cassandra.yaml"
-      - "./integration/cassandra/node-keystore.jks:/opt/cassandra/keystore.jks"
-      - "./integration/cassandra/node-truststore.jks:/opt/cassandra/truststore.jks"
-    ports:
-      - "9043:9042"
-    healthcheck:
-      test: ["CMD", "cqlsh", "-u", "cassandra", "-p", "cassandra"]
-      timeout: 3m
+  migrate:
+    build:
+      context: integration
+    command: [
+      "-path",
+      "/migrations",
+      "-database",
+      "cassandra://scylla:9042/testing?x-multi-statement=true",
+      "up"
+    ]
+    depends_on:
+      keyspace:
+        condition: service_completed_successfully
 
   driver:
     build:

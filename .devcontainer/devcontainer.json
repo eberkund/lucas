@@ -2,8 +2,8 @@
     "name": "lucas",
     "workspaceFolder": "/app",
     "dockerComposeFile": [
-        "${localWorkspaceFolder}/docker-compose.yml",
-        "${localWorkspaceFolder}/docker-compose.devcontainer.yml"
+        "${localWorkspaceFolder}/compose.yml",
+        "${localWorkspaceFolder}/compose.devcontainer.yml"
     ],
     "overrideCommand": true,
     "service": "driver",

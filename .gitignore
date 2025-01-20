@@ -6,5 +6,5 @@ CMakeFiles
 .cache
 .DS_Store
 scratch.lua
-docker-compose.override.yml
+compose.override.yml
 tmp
