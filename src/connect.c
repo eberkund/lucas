@@ -260,17 +260,6 @@ LucasError *set_log_level(lua_State *L, int i, CassCluster *cluster)
     return NULL;
 }
 
-bool get_reconnect(lua_State *L, int i)
-{
-    bool reconnect = false;
-    lua_getfield(L, i, "reconnect");
-    if (!lua_isnil(L, lua_gettop(L)))
-    {
-        reconnect = lua_toboolean(L, lua_gettop(L));
-    }
-    return reconnect;
-}
-
 typedef LucasError *(*ConfigCallback)(lua_State *, int, CassCluster *);
 
 ConfigCallback functions[] = {
@@ -296,22 +285,18 @@ static int connect(lua_State *L)
     CassFuture *future = NULL;
     CassCluster *cluster = NULL;
     LucasError *rc = NULL;
-    const bool reconnect = get_reconnect(L, ARG_OPTIONS);
 
-    if (session && !reconnect)
-    {
-        lucas_log(LOG_WARN, "already connected");
-        return 0;
-    }
     if (session)
     {
-        lucas_log(LOG_WARN, "closing existing session");
+        lucas_log(LOG_WARN, "already connected");
         cass_session_free(session);
+        return 0;
     }
+
     session = cass_session_new();
     cluster = cass_cluster_new();
-
     lucas_log(LOG_INFO, "configuring cluster with provided options");
+
     for (int i = 0; i < sizeof(functions) / sizeof(ConfigCallback); i++)
     {
         rc = functions[i](L, ARG_OPTIONS, cluster);
@@ -328,6 +313,9 @@ static int connect(lua_State *L)
     if (err != CASS_OK)
     {
         rc = lucas_new_errorf_from_cass_error(err, "could not connect to cluster");
+    }
+    if (rc)
+    {
         goto cleanup;
     }
     lucas_log(LOG_INFO, "session connect success");

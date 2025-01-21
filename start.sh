@@ -9,7 +9,7 @@ test=false
 clean() {
     if $clean; then
         print "Removing containers"
-        docker compose rm -fs
+        docker compose rm -sf
     fi
 }
 
@@ -28,7 +28,9 @@ test() {
 }
 
 start() {
+    print "Starting containers"
     docker compose up --exit-code-from=migrate --attach=migrate
+    docker compose up --wait scylla
 }
 
 run_flags() {

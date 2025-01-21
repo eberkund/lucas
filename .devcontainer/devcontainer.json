@@ -11,10 +11,9 @@
         "vscode": {
             "extensions": [
                 "EditorConfig.EditorConfig",
-                "ms-vscode.cmake-tools",
+                "ms-vscode.cpptools-extension-pack",
                 "redhat.vscode-yaml",
                 "llvm-vs-code-extensions.vscode-clangd",
-                "twxs.cmake",
                 "JohnnyMorganz.stylua"
             ]
         }
