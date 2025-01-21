@@ -27,8 +27,8 @@ test() {
     fi
 }
 
-cassandra() {
-    docker compose up -d migrate
+start() {
+    docker compose up --exit-code-from=migrate --attach=migrate
 }
 
 run_flags() {
@@ -45,7 +45,7 @@ run_flags() {
 run() {
     clean
     build
-    cassandra
+    start
     test
 }
 
