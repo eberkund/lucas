@@ -14,9 +14,10 @@ services:
 
   keyspace:
     image: scylladb/scylla-cqlsh
-    entrypoint: [ "cqlsh", "scylla", "-e" ]
+    entrypoint: ["cqlsh", "scylla", "-e"]
     command:
       - "CREATE KEYSPACE IF NOT EXISTS testing WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1};"
+    restart: "no"
     depends_on:
       scylla:
         condition: service_healthy
@@ -24,13 +25,15 @@ services:
   migrate:
     build:
       context: integration
-    command: [
-      "-path",
-      "/migrations",
-      "-database",
-      "cassandra://scylla:9042/testing?x-multi-statement=true",
-      "up"
-    ]
+    command:
+      [
+        "-path",
+        "/migrations",
+        "-database",
+        "cassandra://scylla:9042/testing?x-multi-statement=true",
+        "up",
+      ]
+    restart: "no"
     depends_on:
       keyspace:
         condition: service_completed_successfully
