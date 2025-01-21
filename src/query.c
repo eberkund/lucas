@@ -69,7 +69,8 @@ LucasError *append_collection(lua_State *L, int index, CassCollection *collectio
     {
         err = cass_collection_append_double(collection, lua_tonumber(L, value_index));
     }
-    else if (type == CASS_VALUE_TYPE_ASCII || type == CASS_VALUE_TYPE_TEXT || type == CASS_VALUE_TYPE_VARCHAR)
+    else if (type == CASS_VALUE_TYPE_ASCII || type == CASS_VALUE_TYPE_TEXT || type == CASS_VALUE_TYPE_VARCHAR ||
+             type == CASS_VALUE_TYPE_INET)
     {
         err = cass_collection_append_string(collection, lua_tostring(L, value_index));
     }
@@ -404,7 +405,8 @@ LucasError *cass_value_to_lua(lua_State *L, const CassValue *cass_value)
     {
         lua_pushnil(L);
     }
-    else if (vt == CASS_VALUE_TYPE_ASCII || vt == CASS_VALUE_TYPE_TEXT || vt == CASS_VALUE_TYPE_VARCHAR)
+    else if (vt == CASS_VALUE_TYPE_ASCII || vt == CASS_VALUE_TYPE_TEXT || vt == CASS_VALUE_TYPE_VARCHAR ||
+             vt == CASS_VALUE_TYPE_INET)
     {
         const char *value;
         size_t length;
@@ -608,7 +610,7 @@ LucasError *iterate_result(lua_State *L, CassStatement *statement, const char *p
             rc = cass_value_to_lua(L, cass_row_get_column(row, c));
             if (rc)
             {
-                rc = lucas_wrap_error(rc, "unable to convert cassandra value to lua");
+                rc = lucas_wrap_error(rc, "unable to convert cassandra value to lua for column '%s'", name);
                 goto cleanup;
             }
             lua_settable(L, sub_table);

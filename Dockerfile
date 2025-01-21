@@ -1,23 +1,19 @@
 # syntax=docker/dockerfile:1
 
-FROM ubuntu:18.04 AS base
+FROM openresty/openresty:noble AS base
 
 ENV LD_LIBRARY_PATH="/usr/local/lib/x86_64-linux-gnu"
 ENV LUA_CPATH="/app/build/?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/lib/x86_64-linux-gnu/?.so"
 ENV LUA_PATH="/app/integration/tests/?.lua;;"
-ARG DEBIAN_FRONTEND="noninteractive"
-ARG CLANGD_TAG="15.0.6"
-ARG STYLUA_TAG="v0.16.0"
-ARG SHFMT_TAG="v3.6.0"
-SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 
 RUN <<EOF
-apt-get -qq -o=Dpkg::Use-Pty=0 update
-apt-get -qq -o=Dpkg::Use-Pty=0 install \
+DEBIAN_FRONTEND="noninteractive" apt-get update
+DEBIAN_FRONTEND="noninteractive" apt-get install -y \
   git \
+  libpcre3-dev \
   boxes \
-  clang-10 \
-  clang-format-10 \
+  clang \
+  clang-format \
   make \
   cmake \
   libssl-dev \
@@ -32,8 +28,6 @@ apt-get -qq -o=Dpkg::Use-Pty=0 install \
   doxygen \
   graphviz
 apt-get clean
-ln -s /usr/bin/clang-format-10 /usr/bin/clang-format
-ln -s /usr/bin/clang-10 /usr/bin/clang
 git config --global url.https://.insteadOf git://
 luarocks install busted
 luarocks install luasocket

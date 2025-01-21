@@ -9,7 +9,7 @@ test=false
 clean() {
     if $clean; then
         print "Removing containers"
-        docker compose rm -fs
+        docker compose rm -sf
     fi
 }
 
@@ -27,14 +27,10 @@ test() {
     fi
 }
 
-cassandra() {
-    print "Waiting for Cassandra"
-    docker compose up cassandra --wait --quiet-pull
-    print "Seeding Cassandra"
-    for file in $(find integration -name '*.cql' | sort); do
-        cat $file | docker compose exec -T cassandra cqlsh -u cassandra -p cassandra
-        echo $file
-    done
+start() {
+    print "Starting containers"
+    docker compose up --exit-code-from=migrate --attach=migrate
+    docker compose up --wait scylla
 }
 
 run_flags() {
@@ -51,7 +47,7 @@ run_flags() {
 run() {
     clean
     build
-    cassandra
+    start
     test
 }
 

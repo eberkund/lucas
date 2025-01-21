@@ -1,32 +1,55 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json
 
 services:
-  cassandra:
-    image: cassandra:4.1
-    environment:
-      CASSANDRA_LISTEN_ADDRESS: cassandra
-    mem_limit: 4g
-    volumes:
-      - "./integration/cassandra/cassandra.yaml:/etc/cassandra/cassandra.yaml"
-      - "./integration/cassandra/node-keystore.jks:/opt/cassandra/keystore.jks"
-      - "./integration/cassandra/node-truststore.jks:/opt/cassandra/truststore.jks"
+  scylla:
+    image: scylladb/scylla:6.2
     ports:
-      - "9043:9042"
+      - "9042:9042"
+    volumes:
+      - "./integration/scylla/scylla.yaml:/etc/scylla/scylla.yaml"
+      - "./cert:/opt/scylla/cert"
     healthcheck:
-      test: ["CMD", "cqlsh", "-u", "cassandra", "-p", "cassandra"]
-      timeout: 3m
+      test: ["CMD-SHELL", "[ $$(nodetool statusgossip) = running ]"]
+      timeout: 5m
+
+  keyspace:
+    image: scylladb/scylla-cqlsh
+    entrypoint: ["cqlsh", "scylla", "-e"]
+    command:
+      - "CREATE KEYSPACE IF NOT EXISTS testing WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1};"
+    restart: "no"
+    depends_on:
+      scylla:
+        condition: service_healthy
+
+  migrate:
+    build:
+      context: integration
+    command:
+      [
+        "-path",
+        "/migrations",
+        "-database",
+        "cassandra://scylla:9042/testing?x-multi-statement=true",
+        "up",
+      ]
+    restart: "no"
+    depends_on:
+      keyspace:
+        condition: service_completed_successfully
 
   driver:
     build:
       context: .
       target: build
+    platform: linux/amd64
     init: true
     ulimits:
       core:
         soft: -1
         hard: -1
     environment:
-      CASSANDRA_HOST: cassandra
+      CASSANDRA_HOST: scylla
       CASSANDRA_PORT: 9042
       CASSANDRA_PORT_SSL: 9142
       CASSANDRA_USER: cassandra
