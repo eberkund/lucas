@@ -28,7 +28,7 @@ test() {
 }
 
 cassandra() {
-    docker compose up --wait --quiet-pull
+    docker compose up migrate --wait --quiet-pull
 }
 
 run_flags() {
